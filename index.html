@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<body>
+  <h1 id="titulo">Carregando...</h1>
+
+  <script>
+    fetch("project.json")
+      .then(r => r.json())
+      .then(data => {
+        const spriteNames = data.targets
+          .filter(t => !t.isStage)
+          .map(t => t.name);
+
+        document.getElementById("titulo").textContent =
+          "Sprites: " + spriteNames.join(", ");
+      })
+      .catch(err => {
+        document.getElementById("titulo").textContent = "Erro ao ler JSON";
+        console.error(err);
+      });
+  </script>
+</body>
+</html>
