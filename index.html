@@ -1,146 +1,118 @@
-<!DOCTYPE html><html lang="pt-BR">
+<!DOCTYPE html>
+<html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>Scratch Player</title>
   <style>
-    :root {
-      --bg: #111;
-      --text: #f2f2f2;
-    }* { box-sizing: border-box; }
+    html, body {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      overflow: hidden;
+      background: #000;
+      font-family: Arial, Helvetica, sans-serif;
+    }
 
-html, body {
-  width: 100%;
-  height: 100%;
-  margin: 0;
-  overflow: hidden;
-  background: var(--bg);
-  color: var(--text);
-  font-family: Arial, Helvetica, sans-serif;
-}
+    body {
+      position: fixed;
+      inset: 0;
+    }
 
-body {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
+    #stage {
+      position: fixed;
+      inset: 0;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      background-size: 100% 100%;
+      background-repeat: no-repeat;
+      background-position: center;
+    }
 
-/* Tela responsiva 16:9 ocupando a janela inteira */
-#stageWrap {
-  position: relative;
-  width: 100vw;
-  height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: #000;
-}
-
-#stage {
-  position: relative;
-  aspect-ratio: 16 / 9;
-  width: 100vw;
-  height: 100vh;
-  overflow: hidden;
-  background-size: 100% 100%;
-  background-repeat: no-repeat;
-  background-position: center;
-  transform-origin: center center;
-}
-
-.sprite {
-  position: absolute;
-  transform: translate(-50%, -50%);
-  cursor: pointer;
-  user-select: none;
-  -webkit-user-drag: none;
-}
-
+    .sprite {
+      position: absolute;
+      transform: translate(-50%, -50%);
+      user-select: none;
+      -webkit-user-drag: none;
+      cursor: pointer;
+    }
   </style>
 </head>
-<body><div id="stageWrap">
+<body>
   <div id="stage"></div>
-</div><script>
-const stage = document.getElementById("stage");
 
-// Coordenadas lógicas do Scratch (mantidas para o projeto funcionar)
-const LOGICAL_WIDTH = 480;
-const LOGICAL_HEIGHT = 360;
+  <script>
+    const stage = document.getElementById("stage");
 
-function scratchX(x) {
-    return LOGICAL_WIDTH / 2 + x;
-}
+    const LOGICAL_WIDTH = 480;
+    const LOGICAL_HEIGHT = 360;
 
-function scratchY(y) {
-    return LOGICAL_HEIGHT / 2 - y;
-}
-
-function updateStageScale() {
-    const vw = window.innerWidth;
-    const vh = window.innerHeight;
-    const stageAspect = 16 / 9;
-    const windowAspect = vw / vh;
-
-    // Faz o palco preencher a janela toda sem sair do 16:9
-    if (windowAspect > stageAspect) {
-        stage.style.width = (vh * stageAspect) + "px";
-        stage.style.height = vh + "px";
-    } else {
-        stage.style.width = vw + "px";
-        stage.style.height = (vw / stageAspect) + "px";
-    }
-}
-
-function placeSprite(img, target) {
-    const stageRect = stage.getBoundingClientRect();
-    const scaleX = stageRect.width / LOGICAL_WIDTH;
-    const scaleY = stageRect.height / LOGICAL_HEIGHT;
-
-    img.style.left = (scratchX(target.x || 0) * scaleX) + "px";
-    img.style.top = (scratchY(target.y || 0) * scaleY) + "px";
-    img.style.width = ((target.size || 100) * scaleX) + "px";
-}
-
-window.addEventListener("resize", () => {
-    updateStageScale();
-    document.querySelectorAll(".sprite").forEach(img => {
-        const target = img.__target;
-        if (target) placeSprite(img, target);
-    });
-});
-
-fetch("project.json")
-.then(r => r.json())
-.then(project => {
-    updateStageScale();
-
-    const stageTarget = project.targets.find(t => t.isStage);
-    if (stageTarget) {
-        stage.style.backgroundImage = `url('${stageTarget.costumes[0].md5ext}')`;
+    function scratchX(x) {
+      return 240 + x;
     }
 
-    project.targets.forEach(target => {
-        if (target.isStage) return;
+    function scratchY(y) {
+      return 180 - y;
+    }
 
-        const img = document.createElement("img");
-        img.className = "sprite";
-        img.src = target.costumes[0].md5ext;
-        img.__target = target;
+    function placeSprite(img, target) {
+      const scaleX = window.innerWidth / LOGICAL_WIDTH;
+      const scaleY = window.innerHeight / LOGICAL_HEIGHT;
 
-        img.onload = () => placeSprite(img, target);
-        placeSprite(img, target);
+      img.style.left = (scratchX(target.x || 0) * scaleX) + "px";
+      img.style.top = (scratchY(target.y || 0) * scaleY) + "px";
+      img.style.width = ((target.size || 100) * scaleX) + "px";
+      img.style.height = "auto";
+    }
 
-        img.onclick = () => {
-            const randomX = Math.random() * LOGICAL_WIDTH - LOGICAL_WIDTH / 2;
-            const randomY = Math.random() * LOGICAL_HEIGHT - LOGICAL_HEIGHT / 2;
+    function randomPosition(target) {
+      const x = Math.random() * LOGICAL_WIDTH - LOGICAL_WIDTH / 2;
+      const y = Math.random() * LOGICAL_HEIGHT - LOGICAL_HEIGHT / 2;
+      target.x = x;
+      target.y = y;
+    }
 
-            target.x = randomX;
-            target.y = randomY;
+    fetch("project.json")
+      .then(r => r.json())
+      .then(project => {
+        const stageTarget = project.targets.find(t => t.isStage);
+
+        if (stageTarget && stageTarget.costumes && stageTarget.costumes[0]) {
+          stage.style.backgroundImage = `url("${stageTarget.costumes[0].md5ext}")`;
+        }
+
+        project.targets.forEach(target => {
+          if (target.isStage) return;
+
+          const img = document.createElement("img");
+          img.className = "sprite";
+          img.src = target.costumes && target.costumes[0] ? target.costumes[0].md5ext : "";
+          img.style.display = target.visible === false ? "none" : "block";
+          img.__target = target;
+
+          img.onload = () => {
             placeSprite(img, target);
-        };
+          };
 
-        stage.appendChild(img);
-    });
-});
-</script></body>
+          placeSprite(img, target);
+
+          img.onclick = () => {
+            randomPosition(target);
+            placeSprite(img, target);
+          };
+
+          window.addEventListener("resize", () => {
+            placeSprite(img, target);
+          });
+
+          stage.appendChild(img);
+        });
+      })
+      .catch(err => {
+        console.error(err);
+        stage.innerHTML = "<div style='color:white;padding:20px'>Erro ao carregar project.json</div>";
+      });
+  </script>
+</body>
 </html>
