@@ -1,23 +1,98 @@
 <!DOCTYPE html>
 <html>
+<head>
+<meta charset="UTF-8">
+<title>Scratch Player</title>
+
+<style>
+body{
+    margin:0;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    height:100vh;
+    background:#222;
+}
+
+#stage{
+    width:480px;
+    height:360px;
+    position:relative;
+    overflow:hidden;
+    background-size:100% 100%;
+    border:2px solid #000;
+}
+
+.sprite{
+    position:absolute;
+    transform:translate(-50%,-50%);
+    cursor:pointer;
+}
+</style>
+</head>
 <body>
-  <h1 id="titulo">Carregando...</h1>
 
-  <script>
-    fetch("project.json")
-      .then(r => r.json())
-      .then(data => {
-        const spriteNames = data.targets
-          .filter(t => !t.isStage)
-          .map(t => t.name);
+<div id="stage"></div>
 
-        document.getElementById("titulo").textContent =
-          "Sprites: " + spriteNames.join(", ");
-      })
-      .catch(err => {
-        document.getElementById("titulo").textContent = "Erro ao ler JSON";
-        console.error(err);
-      });
-  </script>
+<script>
+const stage = document.getElementById("stage");
+
+function scratchX(x){
+    return 240 + x;
+}
+
+function scratchY(y){
+    return 180 - y;
+}
+
+fetch("project.json")
+.then(r => r.json())
+.then(project => {
+
+    const stageTarget = project.targets.find(t => t.isStage);
+
+    if(stageTarget){
+        stage.style.backgroundImage =
+            `url('${stageTarget.costumes[0].md5ext}')`;
+    }
+
+    project.targets.forEach(target => {
+
+        if(target.isStage) return;
+
+        const img = document.createElement("img");
+
+        img.className = "sprite";
+        img.src = target.costumes[0].md5ext;
+
+        img.onload = () => {
+
+            img.style.left =
+                scratchX(target.x || 0) + "px";
+
+            img.style.top =
+                scratchY(target.y || 0) + "px";
+        };
+
+        img.onclick = () => {
+
+            const randomX =
+                Math.random() * 480 - 240;
+
+            const randomY =
+                Math.random() * 360 - 180;
+
+            img.style.left =
+                scratchX(randomX) + "px";
+
+            img.style.top =
+                scratchY(randomY) + "px";
+        };
+
+        stage.appendChild(img);
+    });
+});
+</script>
+
 </body>
 </html>
